@@ -107,7 +107,7 @@ def update_channel(ss, row, last_link, status):
     """Обновляет LastLink (col B) и Статус (col C) одним запросом."""
     try:
         sheet = ss.worksheet('Каналы')
-        sheet.update(f'B{row}:C{row}', [[last_link, status]])
+        sheet.update([[last_link, status]], f'B{row}:C{row}')
     except Exception as e:
         log.error(f'Ошибка обновления канала row={row}: {e}')
 
@@ -147,10 +147,18 @@ def write_log(ss, level, message):
 # ============================================================
 def send_to_telegram(posts, tg_token, tg_chats):
     """Отправляет посты в Telegram чаты/каналы через бота."""
+    import time
     if not posts or not tg_token or not tg_chats:
         return
     for p in posts:
-        text = f"📢 *{p['chat_name']}*\n\n{p['text']}\n\n🔗 {p['link']}"
+        # Экранируем спецсимволы Markdown в тексте поста
+        safe_text = (p['text']
+            .replace('*', '\\*')
+            .replace('_', '\\_')
+            .replace('`', '\\`')
+            .replace('[', '\\[')
+        )
+        text = f"📢 *{p['chat_name']}*\n\n{safe_text}\n\n🔗 {p['link']}"
         if len(text) > 4000:
             text = text[:4000] + '...'
         for chat_id in tg_chats:
@@ -167,9 +175,10 @@ def send_to_telegram(posts, tg_token, tg_chats):
                     headers={'Content-Type': 'application/json'}
                 )
                 urllib.request.urlopen(req, timeout=10)
-                import time; time.sleep(0.3)
+                time.sleep(0.3)
             except Exception as e:
-                log.error(f'Ошибка отправки TG в {chat_id}: {e}')
+                log.error(f'Ошибка отправки TG в {chat_id}: {e} | текст: {text[:200]}')
+        time.sleep(0.3)
 
 # ============================================================
 # ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
