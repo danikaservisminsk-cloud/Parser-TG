@@ -151,14 +151,7 @@ def send_to_telegram(posts, tg_token, tg_chats):
     if not posts or not tg_token or not tg_chats:
         return
     for p in posts:
-        # Экранируем спецсимволы Markdown в тексте поста
-        safe_text = (p['text']
-            .replace('*', '\\*')
-            .replace('_', '\\_')
-            .replace('`', '\\`')
-            .replace('[', '\\[')
-        )
-        text = f"📢 *{p['chat_name']}*\n\n{safe_text}\n\n🔗 {p['link']}"
+        text = f"📢 {p['chat_name']}\n\n{p['text']}\n\n🔗 {p['link']}"
         if len(text) > 4000:
             text = text[:4000] + '...'
         for chat_id in tg_chats:
@@ -167,7 +160,6 @@ def send_to_telegram(posts, tg_token, tg_chats):
                 data = json.dumps({
                     'chat_id': chat_id,
                     'text': text,
-                    'parse_mode': 'Markdown',
                     'disable_web_page_preview': False
                 }).encode('utf-8')
                 req = urllib.request.Request(
